@@ -33,7 +33,7 @@ FLAP_INTERVAL_MAX = 0.95
 SPRING_STRENGTH = 8.0           # qué tan fuerte "tira" hacia el objetivo actual
 DAMPING = 4.0                   # amortiguación (evita que oscile sin control)
 
-GAUSSIAN_SIGMA = 75              # dispersión típica del vuelo respecto al centro
+GAUSSIAN_SIGMA = 90              # dispersión típica del vuelo respecto al centro
 FLIGHT_MARGIN_TOP = 90           # Barranquín no puede acercarse más que esto al tope
 FLIGHT_MARGIN_BOTTOM = 90        # ni a este margen del fondo del área de juego
 
