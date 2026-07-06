@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Puntaje guardado localmente (se genera al jugar; no es código fuente)
+best_score.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Archivos temporales del informe (LibreOffice / Word)
+informe/~$*
+informe/*.tmp
