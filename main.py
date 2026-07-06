@@ -1,10 +1,12 @@
 """
-Flappy Inverso — PARTE 3: el barranco aparece en pantalla
+Flappy Inverso — PARTE 4: control del jugador, colisiones y puntaje
 ---------------------------------------------------------------------
-Tercer avance: se agrega el barranco (gate.py). Por ahora solo se
-mueve de derecha a izquierda y se regenera al salir de pantalla; el
-jugador todavía no lo controla y no hay colisiones ni puntaje — eso
-se agrega en la Parte 4.
+Cuarto avance: el jugador ya puede mover el hueco del barranco con el
+teclado (flechas o W/S), hay detección de colisiones círculo–rectángulo
+y sistema de puntaje. La dificultad ahora depende del puntaje (el
+barranco se mueve más rápido y el hueco se achica). Todavía no hay
+pantallas de inicio/fin ni mejor puntaje guardado — eso se agrega en
+la Parte 5.
 
 Ejecución:
     pip install -r requirements.txt
@@ -19,7 +21,7 @@ import pygame
 
 import settings as s
 from bird import Bird
-from gate import Gate
+from gate import Gate, circle_rect_collides
 
 
 def lerp_color(c1, c2, t):
@@ -57,10 +59,13 @@ def main():
     pygame.display.set_caption(s.TITLE)
     screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
     clock = pygame.time.Clock()
+    font_hud = pygame.font.Font(None, 26)
 
     landscape = build_landscape()
     bird = Bird()
-    gate = Gate()
+    gate = Gate(0)
+    score = 0
+    move_up = move_down = False
 
     running = True
     while running:
@@ -69,17 +74,51 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    move_up = True
+                if event.key in (pygame.K_DOWN, pygame.K_s):
+                    move_down = True
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            elif event.type == pygame.KEYUP:
+                if event.key in (pygame.K_UP, pygame.K_w):
+                    move_up = False
+                if event.key in (pygame.K_DOWN, pygame.K_s):
+                    move_down = False
 
         bird.update(dt)
-        gate.update(dt)
+        gate.update(dt, move_up, move_down)
+
+        overlaps_x = (
+            gate.x < bird.x + s.BIRD_RADIUS
+            and gate.x + s.GATE_WIDTH > bird.x - s.BIRD_RADIUS
+        )
+        if overlaps_x:
+            hit = (
+                circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.top_rect)
+                or circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.bottom_rect)
+            )
+            if hit:
+                # Por ahora, sin pantalla de fin de partida: solo se reinicia.
+                bird = Bird()
+                gate = Gate(0)
+                score = 0
+
+        if not gate.scored and gate.x + s.GATE_WIDTH < bird.x - s.BIRD_RADIUS:
+            gate.scored = True
+            score += 1
+
         if gate.offscreen:
-            gate = Gate()
+            gate = Gate(score)
 
         screen.blit(landscape, (0, 0))
         gate.draw(screen)
         bird.draw(screen)
+
+        hud_surf = font_hud.render(f"Puntaje {score}", True, s.CREAM)
+        screen.blit(hud_surf, (12, 10))
+
         pygame.display.flip()
 
     pygame.quit()

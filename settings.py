@@ -51,14 +51,22 @@ BIRD_BEAK = (217, 201, 163)
 TRAIL_COLOR = (232, 179, 77)
 
 # ---------------------------------------------------------------------
-# El barranco (todavía sin control del jugador: solo se mueve)
+# El barranco: ahora con control del jugador y dificultad progresiva
 # ---------------------------------------------------------------------
 GATE_WIDTH = 62
+GATE_CONTROL_SPEED = 320.0      # px/s al mover el hueco con el teclado
 GATE_SPAWN_MARGIN = 60
-GAP_HEIGHT = 190
-SPEED = 150.0
+
+GAP_HEIGHT_START = 190
+GAP_HEIGHT_MIN = 120
+GAP_HEIGHT_STEP = 4              # se reduce por cada punto anotado
+
+SPEED_START = 150.0              # px/s de avance del barranco
+SPEED_MAX = 280.0
+SPEED_STEP = 6.0                 # aumenta por cada punto anotado
 
 CLIFF_BASE = (201, 122, 74)
 CLIFF_BAND = (168, 101, 58)
 CLIFF_BORDER = (110, 64, 35)
 BURROW = (59, 42, 32)
+CONTROL_INDICATOR = (232, 179, 77)
