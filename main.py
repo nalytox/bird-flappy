@@ -1,21 +1,23 @@
 """
-Flappy Inverso — PARTE 4: control del jugador, colisiones y puntaje
+Flappy Inverso — protagonizado por Barranquín (loro tricahue, mascota UOH)
 ---------------------------------------------------------------------
-Cuarto avance: el jugador ya puede mover el hueco del barranco con el
-teclado (flechas o W/S), hay detección de colisiones círculo–rectángulo
-y sistema de puntaje. La dificultad ahora depende del puntaje (el
-barranco se mueve más rápido y el hueco se achica). Todavía no hay
-pantallas de inicio/fin ni mejor puntaje guardado — eso se agrega en
-la Parte 5.
+Punto de entrada del juego: crea la ventana, maneja los tres estados
+(inicio / jugando / fin de partida), procesa el teclado y dibuja cada
+cuadro. La lógica de vuelo vive en bird.py y la del barranco en
+gate.py; aquí solo se coordinan (equivale a las secciones "5. Estado
+del juego y bucle principal", "6. Entrada de teclado" y "7. Dibujo" de
+la primera versión, hecha en HTML/CSS/JS).
 
 Ejecución:
     pip install -r requirements.txt
-    python3 main.py
+    python main.py
 ---------------------------------------------------------------------
 """
 
+import json
 import math
 import sys
+from pathlib import Path
 
 import pygame
 
@@ -23,6 +25,38 @@ import settings as s
 from bird import Bird
 from gate import Gate, circle_rect_collides
 
+BEST_SCORE_FILE = Path(__file__).parent / "best_score.json"
+
+STATE_START = "start"
+STATE_PLAYING = "playing"
+STATE_GAME_OVER = "over"
+
+
+# ---------------------------------------------------------------------
+# Persistencia simple del mejor puntaje (equivalente a los
+# localStorageSafeGet/Set de la versión web, pero con un archivo local).
+# ---------------------------------------------------------------------
+
+def load_best_score():
+    try:
+        data = json.loads(BEST_SCORE_FILE.read_text())
+        return int(data.get("best", 0))
+    except (FileNotFoundError, ValueError, json.JSONDecodeError):
+        return 0
+
+
+def save_best_score(best):
+    try:
+        BEST_SCORE_FILE.write_text(json.dumps({"best": best}))
+    except OSError:
+        pass  # almacenamiento no disponible: se ignora silenciosamente
+
+
+# ---------------------------------------------------------------------
+# Fondo: precordillera de la Región de O'Higgins. Se dibuja una sola vez
+# en una superficie y se reutiliza en cada cuadro (no cambia con el
+# tiempo, así que no hace falta recalcularlo 60 veces por segundo).
+# ---------------------------------------------------------------------
 
 def lerp_color(c1, c2, t):
     return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3))
@@ -54,18 +88,87 @@ def _draw_hill_layer(surface, base_y, amplitude, color):
     pygame.draw.polygon(surface, color, points)
 
 
+# ---------------------------------------------------------------------
+# Texto y overlays (pantallas de inicio / fin de partida)
+# ---------------------------------------------------------------------
+
+def draw_text_center(surface, font, text, color, center):
+    rendered = font.render(text, True, color)
+    rect = rendered.get_rect(center=center)
+    surface.blit(rendered, rect)
+    return rect.height
+
+
+def wrap_text(font, text, max_width):
+    words = text.split(" ")
+    lines = []
+    current = ""
+    for word in words:
+        trial = f"{current} {word}".strip()
+        if font.size(trial)[0] <= max_width:
+            current = trial
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
+def draw_overlay(surface, fonts, heading_lines, body_text, button_text):
+    tint = pygame.Surface((s.WIDTH, s.HEIGHT), pygame.SRCALPHA)
+    tint.fill((*s.INK, 225))
+    surface.blit(tint, (0, 0))
+
+    y = s.HEIGHT * 0.28
+    for text, font, color in heading_lines:
+        h = draw_text_center(surface, font, text, color, (s.WIDTH / 2, y))
+        y += h + 12
+
+    y += 6
+    for line in wrap_text(fonts["body"], body_text, s.WIDTH - 64):
+        h = draw_text_center(surface, fonts["body"], line, s.CREAM, (s.WIDTH / 2, y))
+        y += h + 4
+
+    button_rect = pygame.Rect(0, 0, 230, 52)
+    button_rect.center = (s.WIDTH / 2, s.HEIGHT * 0.8)
+    pygame.draw.rect(surface, s.AMBER, button_rect, border_radius=10)
+    draw_text_center(surface, fonts["button"], button_text, s.INK, button_rect.center)
+
+
+# ---------------------------------------------------------------------
+# Bucle principal
+# ---------------------------------------------------------------------
+
 def main():
     pygame.init()
     pygame.display.set_caption(s.TITLE)
     screen = pygame.display.set_mode((s.WIDTH, s.HEIGHT))
     clock = pygame.time.Clock()
-    font_hud = pygame.font.Font(None, 26)
+
+    fonts = {
+        "title": pygame.font.Font(None, 30),
+        "eyebrow": pygame.font.Font(None, 20),
+        "body": pygame.font.Font(None, 22),
+        "button": pygame.font.Font(None, 24),
+        "hud": pygame.font.Font(None, 26),
+    }
 
     landscape = build_landscape()
+
+    state = STATE_START
     bird = Bird()
     gate = Gate(0)
     score = 0
+    best = load_best_score()
     move_up = move_down = False
+
+    def reset_game():
+        nonlocal bird, gate, score
+        bird = Bird()
+        gate = Gate(0)
+        score = 0
 
     running = True
     while running:
@@ -79,6 +182,9 @@ def main():
                     move_up = True
                 if event.key in (pygame.K_DOWN, pygame.K_s):
                     move_down = True
+                if event.key == pygame.K_SPACE and state in (STATE_START, STATE_GAME_OVER):
+                    reset_game()
+                    state = STATE_PLAYING
                 if event.key == pygame.K_ESCAPE:
                     running = False
             elif event.type == pygame.KEYUP:
@@ -87,37 +193,69 @@ def main():
                 if event.key in (pygame.K_DOWN, pygame.K_s):
                     move_down = False
 
-        bird.update(dt)
-        gate.update(dt, move_up, move_down)
+        if state == STATE_PLAYING:
+            bird.update(dt)
+            gate.update(dt, move_up, move_down)
 
-        overlaps_x = (
-            gate.x < bird.x + s.BIRD_RADIUS
-            and gate.x + s.GATE_WIDTH > bird.x - s.BIRD_RADIUS
-        )
-        if overlaps_x:
-            hit = (
-                circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.top_rect)
-                or circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.bottom_rect)
+            overlaps_x = (
+                gate.x < bird.x + s.BIRD_RADIUS
+                and gate.x + s.GATE_WIDTH > bird.x - s.BIRD_RADIUS
             )
-            if hit:
-                # Por ahora, sin pantalla de fin de partida: solo se reinicia.
-                bird = Bird()
-                gate = Gate(0)
-                score = 0
+            if overlaps_x:
+                hit = (
+                    circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.top_rect)
+                    or circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.bottom_rect)
+                )
+                if hit:
+                    state = STATE_GAME_OVER
+                    if score > best:
+                        best = score
+                        save_best_score(best)
 
-        if not gate.scored and gate.x + s.GATE_WIDTH < bird.x - s.BIRD_RADIUS:
-            gate.scored = True
-            score += 1
+            if not gate.scored and gate.x + s.GATE_WIDTH < bird.x - s.BIRD_RADIUS:
+                gate.scored = True
+                score += 1
 
-        if gate.offscreen:
-            gate = Gate(score)
+            if gate.offscreen:
+                gate = Gate(score)
 
+        # --- Dibujo ---
         screen.blit(landscape, (0, 0))
         gate.draw(screen)
         bird.draw(screen)
 
-        hud_surf = font_hud.render(f"Puntaje {score}", True, s.CREAM)
+        hud_text = f"Puntaje {score}   ·   Mejor {best}"
+        hud_surf = fonts["hud"].render(hud_text, True, s.CREAM)
         screen.blit(hud_surf, (12, 10))
+
+        if state == STATE_START:
+            draw_overlay(
+                screen,
+                fonts,
+                heading_lines=[
+                    ("TÚ NO ERES BARRANQUÍN", fonts["eyebrow"], s.BIRD_BELLY),
+                    ("Tú controlas el barranco", fonts["title"], s.CREAM),
+                ],
+                body_text=(
+                    "Barranquín, el loro tricahue de la UOH, vuela solo y ronda el "
+                    "centro de la pantalla de forma impredecible. Mueve el hueco del "
+                    "barranco con las flechas (arriba/abajo) o W/S para que encaje "
+                    "con él a tiempo."
+                ),
+                button_text="Empezar (Espacio)",
+            )
+        elif state == STATE_GAME_OVER:
+            draw_overlay(
+                screen,
+                fonts,
+                heading_lines=[
+                    ("CHOQUE", fonts["eyebrow"], s.BIRD_BELLY),
+                    ("Barranquín no encajó", fonts["title"], s.CREAM),
+                    (f"Puntaje final: {score}", fonts["body"], s.AMBER),
+                ],
+                body_text="",
+                button_text="Reintentar (Espacio)",
+            )
 
         pygame.display.flip()
 
