@@ -54,7 +54,7 @@ TRAIL_COLOR = (232, 179, 77)
 # El barranco: ahora con control del jugador y dificultad progresiva
 # ---------------------------------------------------------------------
 GATE_WIDTH = 62
-GATE_CONTROL_SPEED = 320.0      # px/s al mover el hueco con el teclado
+GATE_CONTROL_SPEED = 260.0      # px/s al mover el hueco con el teclado
 GATE_SPAWN_MARGIN = 60
 
 GAP_HEIGHT_START = 190
