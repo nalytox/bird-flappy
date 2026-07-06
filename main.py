@@ -1,9 +1,11 @@
 """
-Flappy Inverso — PARTE 1: ventana y fondo
+Flappy Inverso — PARTE 2: Barranquín y su vuelo
 ---------------------------------------------------------------------
-Primer avance: solo se abre la ventana y se dibuja el paisaje de fondo
-(la precordillera de la Región de O'Higgins). Todavía no hay pájaro ni
-barranco: eso se agrega en las siguientes partes.
+Segundo avance: se agrega a Barranquín (bird.py) con su vuelo
+autónomo — un oscilador amortiguado que persigue un objetivo de altura
+sorteado con distribución normal (ver bird.py para el detalle). Se
+puede ver volar solo, rondando el centro de la pantalla. Todavía no
+hay barranco ni colisiones: eso se agrega en la Parte 3.
 
 Ejecución:
     pip install -r requirements.txt
@@ -17,16 +19,14 @@ import sys
 import pygame
 
 import settings as s
+from bird import Bird
 
 
 def lerp_color(c1, c2, t):
-    """Interpola linealmente entre dos colores RGB según t en [0, 1]."""
     return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3))
 
 
 def build_landscape():
-    """Dibuja el cielo (degradado) y los cerros una sola vez, en una
-    superficie que se reutiliza en cada cuadro (el fondo no cambia)."""
     surface = pygame.Surface((s.WIDTH, s.HEIGHT))
     for y in range(s.HEIGHT):
         t = y / s.HEIGHT
@@ -59,10 +59,11 @@ def main():
     clock = pygame.time.Clock()
 
     landscape = build_landscape()
+    bird = Bird()
 
     running = True
     while running:
-        clock.tick(s.FPS)
+        dt = min(0.033, clock.tick(s.FPS) / 1000)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -70,7 +71,10 @@ def main():
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
 
+        bird.update(dt)
+
         screen.blit(landscape, (0, 0))
+        bird.draw(screen)
         pygame.display.flip()
 
     pygame.quit()
