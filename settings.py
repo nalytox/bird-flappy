@@ -33,7 +33,8 @@ FLAP_INTERVAL_MAX = 0.95
 SPRING_STRENGTH = 8.0           # qué tan fuerte "tira" hacia el objetivo actual
 DAMPING = 4.0                   # amortiguación (evita que oscile sin control)
 
-GAUSSIAN_SIGMA = 90              # dispersión típica del vuelo respecto al centro
+
+GAUSSIAN_SIGMA = 60              # dispersión típica del vuelo respecto al centro
 FLIGHT_MARGIN_TOP = 90           # Barranquín no puede acercarse más que esto al tope
 FLIGHT_MARGIN_BOTTOM = 90        # ni a este margen del fondo del área de juego
 
@@ -49,3 +50,24 @@ BIRD_EYE_RING = (247, 242, 231)
 BIRD_EYE = (36, 26, 18)
 BIRD_BEAK = (217, 201, 163)
 TRAIL_COLOR = (232, 179, 77)
+
+# ---------------------------------------------------------------------
+# El barranco: ahora con control del jugador y dificultad progresiva
+# ---------------------------------------------------------------------
+GATE_WIDTH = 62
+GATE_CONTROL_SPEED = 260.0      # px/s al mover el hueco con el teclado
+GATE_SPAWN_MARGIN = 60
+
+GAP_HEIGHT_START = 190
+GAP_HEIGHT_MIN = 120
+GAP_HEIGHT_STEP = 4              # se reduce por cada punto anotado
+
+SPEED_START = 150.0              # px/s de avance del barranco
+SPEED_MAX = 280.0
+SPEED_STEP = 6.0                 # aumenta por cada punto anotado
+
+CLIFF_BASE = (201, 122, 74)
+CLIFF_BAND = (168, 101, 58)
+CLIFF_BORDER = (110, 64, 35)
+BURROW = (59, 42, 32)
+CONTROL_INDICATOR = (232, 179, 77)
