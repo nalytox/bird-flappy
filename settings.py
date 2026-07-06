@@ -49,3 +49,16 @@ BIRD_EYE_RING = (247, 242, 231)
 BIRD_EYE = (36, 26, 18)
 BIRD_BEAK = (217, 201, 163)
 TRAIL_COLOR = (232, 179, 77)
+
+# ---------------------------------------------------------------------
+# El barranco (todavía sin control del jugador: solo se mueve)
+# ---------------------------------------------------------------------
+GATE_WIDTH = 62
+GATE_SPAWN_MARGIN = 60
+GAP_HEIGHT = 190
+SPEED = 150.0
+
+CLIFF_BASE = (201, 122, 74)
+CLIFF_BAND = (168, 101, 58)
+CLIFF_BORDER = (110, 64, 35)
+BURROW = (59, 42, 32)

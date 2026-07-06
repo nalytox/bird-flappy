@@ -1,11 +1,10 @@
 """
-Flappy Inverso — PARTE 2: Barranquín y su vuelo
+Flappy Inverso — PARTE 3: el barranco aparece en pantalla
 ---------------------------------------------------------------------
-Segundo avance: se agrega a Barranquín (bird.py) con su vuelo
-autónomo — un oscilador amortiguado que persigue un objetivo de altura
-sorteado con distribución normal (ver bird.py para el detalle). Se
-puede ver volar solo, rondando el centro de la pantalla. Todavía no
-hay barranco ni colisiones: eso se agrega en la Parte 3.
+Tercer avance: se agrega el barranco (gate.py). Por ahora solo se
+mueve de derecha a izquierda y se regenera al salir de pantalla; el
+jugador todavía no lo controla y no hay colisiones ni puntaje — eso
+se agrega en la Parte 4.
 
 Ejecución:
     pip install -r requirements.txt
@@ -20,6 +19,7 @@ import pygame
 
 import settings as s
 from bird import Bird
+from gate import Gate
 
 
 def lerp_color(c1, c2, t):
@@ -60,6 +60,7 @@ def main():
 
     landscape = build_landscape()
     bird = Bird()
+    gate = Gate()
 
     running = True
     while running:
@@ -72,8 +73,12 @@ def main():
                 running = False
 
         bird.update(dt)
+        gate.update(dt)
+        if gate.offscreen:
+            gate = Gate()
 
         screen.blit(landscape, (0, 0))
+        gate.draw(screen)
         bird.draw(screen)
         pygame.display.flip()
 
