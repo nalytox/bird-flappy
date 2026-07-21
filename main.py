@@ -28,6 +28,7 @@ from gate import Gate, circle_rect_collides
 BEST_SCORE_FILE = Path(__file__).parent / "best_score.json"
 
 STATE_START = "start"
+STATE_DIFFICULTY = "difficulty"
 STATE_PLAYING = "playing"
 STATE_GAME_OVER = "over"
 
@@ -137,6 +138,58 @@ def draw_overlay(surface, fonts, heading_lines, body_text, button_text):
     draw_text_center(surface, fonts["button"], button_text, s.INK, button_rect.center)
 
 
+def draw_difficulty_selection(surface, fonts, selected_difficulty):
+    tint = pygame.Surface((s.WIDTH, s.HEIGHT), pygame.SRCALPHA)
+    tint.fill((*s.INK, 225))
+    surface.blit(tint, (0, 0))
+
+    draw_text_center(
+        surface,
+        fonts["eyebrow"],
+        "ELIGE TU DESAFÍO",
+        s.BIRD_BELLY,
+        (s.WIDTH / 2, 145),
+    )
+    draw_text_center(
+        surface,
+        fonts["title"],
+        "Selecciona una dificultad",
+        s.CREAM,
+        (s.WIDTH / 2, 180),
+    )
+
+    option_width = 280
+    option_height = 58
+    option_x = (s.WIDTH - option_width) / 2
+    option_y = 235
+
+    for difficulty_key, difficulty in s.DIFFICULTIES.items():
+        option_rect = pygame.Rect(option_x, option_y, option_width, option_height)
+        is_selected = difficulty_key == selected_difficulty
+        fill_color = s.AMBER if is_selected else s.CLIFF_BORDER
+        text_color = s.INK if is_selected else s.CREAM
+
+        pygame.draw.rect(surface, fill_color, option_rect, border_radius=10)
+        if is_selected:
+            pygame.draw.rect(surface, s.CREAM, option_rect, 2, border_radius=10)
+        draw_text_center(
+            surface,
+            fonts["button"],
+            difficulty["label"],
+            text_color,
+            option_rect.center,
+        )
+        option_y += option_height + 14
+
+    draw_text_center(
+        surface,
+        fonts["body"],
+        "Usa Arriba/Abajo o W/S y confirma con Espacio",
+        s.CREAM,
+        (s.WIDTH / 2, 495),
+    )
+
+
 # ---------------------------------------------------------------------
 # Bucle principal
 # ---------------------------------------------------------------------
@@ -162,6 +215,8 @@ def main():
     gate = Gate(0)
     score = 0
     best = load_best_score()
+    difficulty_keys = list(s.DIFFICULTIES)
+    selected_difficulty = s.DEFAULT_DIFFICULTY
     move_up = move_down = False
 
     def reset_game():
@@ -182,11 +237,27 @@ def main():
                     move_up = True
                 if event.key in (pygame.K_DOWN, pygame.K_s):
                     move_down = True
-                if event.key == pygame.K_SPACE and state in (STATE_START, STATE_GAME_OVER):
+
+                if state == STATE_DIFFICULTY and event.key in (pygame.K_UP, pygame.K_w):
+                    current_index = difficulty_keys.index(selected_difficulty)
+                    selected_difficulty = difficulty_keys[(current_index - 1) % len(difficulty_keys)]
+                elif state == STATE_DIFFICULTY and event.key in (pygame.K_DOWN, pygame.K_s):
+                    current_index = difficulty_keys.index(selected_difficulty)
+                    selected_difficulty = difficulty_keys[(current_index + 1) % len(difficulty_keys)]
+
+                if event.key == pygame.K_SPACE and state == STATE_START:
+                    state = STATE_DIFFICULTY
+                elif event.key == pygame.K_SPACE and state == STATE_DIFFICULTY:
+                    reset_game()
+                    state = STATE_PLAYING
+                elif event.key == pygame.K_SPACE and state == STATE_GAME_OVER:
                     reset_game()
                     state = STATE_PLAYING
                 if event.key == pygame.K_ESCAPE:
-                    running = False
+                    if state == STATE_DIFFICULTY:
+                        state = STATE_START
+                    else:
+                        running = False
             elif event.type == pygame.KEYUP:
                 if event.key in (pygame.K_UP, pygame.K_w):
                     move_up = False
@@ -242,8 +313,10 @@ def main():
                     "barranco con las flechas (arriba/abajo) o W/S para que encaje "
                     "con él a tiempo."
                 ),
-                button_text="Empezar (Espacio)",
+                button_text="Continuar (Espacio)",
             )
+        elif state == STATE_DIFFICULTY:
+            draw_difficulty_selection(screen, fonts, selected_difficulty)
         elif state == STATE_GAME_OVER:
             draw_overlay(
                 screen,
