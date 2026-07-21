@@ -211,18 +211,18 @@ def main():
     landscape = build_landscape()
 
     state = STATE_START
-    bird = Bird()
-    gate = Gate(0)
-    score = 0
-    best = load_best_score()
     difficulty_keys = list(s.DIFFICULTIES)
     selected_difficulty = s.DEFAULT_DIFFICULTY
+    bird = Bird()
+    gate = Gate(0, selected_difficulty)
+    score = 0
+    best = load_best_score()
     move_up = move_down = False
 
     def reset_game():
         nonlocal bird, gate, score
         bird = Bird()
-        gate = Gate(0)
+        gate = Gate(0, selected_difficulty)
         score = 0
 
     running = True
@@ -288,7 +288,7 @@ def main():
                 score += 1
 
             if gate.offscreen:
-                gate = Gate(score)
+                gate = Gate(score, selected_difficulty)
 
         # --- Dibujo ---
         screen.blit(landscape, (0, 0))
@@ -298,6 +298,10 @@ def main():
         hud_text = f"Puntaje {score}   ·   Mejor {best}"
         hud_surf = fonts["hud"].render(hud_text, True, s.CREAM)
         screen.blit(hud_surf, (12, 10))
+
+        difficulty_label = s.DIFFICULTIES[selected_difficulty]["label"]
+        difficulty_surf = fonts["body"].render(difficulty_label, True, s.AMBER)
+        screen.blit(difficulty_surf, (s.WIDTH - difficulty_surf.get_width() - 12, 12))
 
         if state == STATE_START:
             draw_overlay(

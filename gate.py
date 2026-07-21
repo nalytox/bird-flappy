@@ -12,10 +12,17 @@ from utils import clamp
 
 
 class Gate:
-    def __init__(self, score):
+    def __init__(self, score, difficulty=s.DEFAULT_DIFFICULTY):
+        config = s.DIFFICULTIES[difficulty]
         self.x = float(s.WIDTH + s.GATE_WIDTH)
-        self.gap_height = max(s.GAP_HEIGHT_MIN, s.GAP_HEIGHT_START - score * s.GAP_HEIGHT_STEP)
-        self.speed = min(s.SPEED_MAX, s.SPEED_START + score * s.SPEED_STEP)
+        self.gap_height = max(
+            config["gap_height_min"],
+            config["gap_height_start"] - score * config["gap_height_step"],
+        )
+        self.speed = min(
+            config["speed_max"],
+            config["speed_start"] + score * config["speed_step"],
+        )
         self.gap_y = random.uniform(
             s.GATE_SPAWN_MARGIN + self.gap_height / 2,
             s.HEIGHT - s.GATE_SPAWN_MARGIN - self.gap_height / 2,
