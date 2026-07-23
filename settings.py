@@ -48,6 +48,43 @@ SPEED_START = 150.0              # px/s de avance del barranco
 SPEED_MAX = 280.0
 SPEED_STEP = 6.0                 # aumenta por cada punto anotado
 
+# Niveles de dificultad. Cada modalidad define el punto de partida y
+# la progresión del barranco a medida que aumenta el puntaje. La
+# configuración normal conserva exactamente los valores originales del
+# juego; fácil ofrece un hueco mayor y una progresión más suave, mientras
+# que difícil comienza más rápido y reduce el hueco con mayor intensidad.
+DEFAULT_DIFFICULTY = "normal"
+
+DIFFICULTIES = {
+    "easy": {
+        "label": "Fácil",
+        "gap_height_start": 220,
+        "gap_height_min": 145,
+        "gap_height_step": 3,
+        "speed_start": 125.0,
+        "speed_max": 240.0,
+        "speed_step": 4.0,
+    },
+    "normal": {
+        "label": "Normal",
+        "gap_height_start": GAP_HEIGHT_START,
+        "gap_height_min": GAP_HEIGHT_MIN,
+        "gap_height_step": GAP_HEIGHT_STEP,
+        "speed_start": SPEED_START,
+        "speed_max": SPEED_MAX,
+        "speed_step": SPEED_STEP,
+    },
+    "hard": {
+        "label": "Difícil",
+        "gap_height_start": 165,
+        "gap_height_min": 100,
+        "gap_height_step": 5,
+        "speed_start": 180.0,
+        "speed_max": 320.0,
+        "speed_step": 8.0,
+    },
+}
+
 # ---------------------------------------------------------------------
 # Paleta: precordillera semiárida de la Región de O'Higgins (hábitat real
 # del tricahue) + colores reales del plumaje de Barranquín.

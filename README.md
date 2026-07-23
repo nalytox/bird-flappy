@@ -29,8 +29,11 @@ Código Distribuido**, Universidad de O'Higgins.
 - Estela visual que muestra el recorrido errático del pájaro.
 - Control del hueco del barranco con teclado (`↑`/`↓` o `W`/`S`).
 - Detección de colisiones círculo–rectángulo y sistema de puntaje.
-- Dificultad progresiva: el barranco se mueve más rápido y el hueco se reduce a medida
-  que sube el puntaje.
+- Selector de dificultad con tres modalidades: **Fácil**, **Normal** y **Difícil**.
+  Cada una modifica la velocidad inicial del barranco, el tamaño del hueco y su
+  progresión durante la partida. La opción elegida se muestra en pantalla.
+- Menú de pausa para continuar la partida o volver al inicio, además de opciones para
+  reintentar o cambiar la dificultad después de una derrota.
 - Pantallas de inicio y de fin de partida, con mejor puntaje guardado en un archivo
   local (`best_score.json`, no versionado).
 
@@ -73,13 +76,15 @@ flappy-inverso/
 
 ## Uso básico
 
-1. Ejecuta `python3 main.py` y presiona **Espacio** para iniciar la partida.
+1. Ejecuta `python3 main.py`, presiona **Espacio** y selecciona una dificultad con
+   `↑`/`↓` o `W`/`S`. Confirma la opción con **Espacio**.
 2. Barranquín comienza a volar solo, rondando el centro de la pantalla de forma
    impredecible.
 3. Usa `↑` / `W` para subir el hueco del barranco y `↓` / `S` para bajarlo.
 4. Cada vez que Barranquín cruza el hueco sin chocar, sumas un punto.
-5. Si Barranquín choca contra el barranco, la partida termina. Presiona **Espacio**
-   para volver a jugar, o **Esc** para salir.
+5. Durante la partida, presiona **Esc** para abrir el menú de pausa.
+6. Si Barranquín choca contra el barranco, puedes reintentar con la misma dificultad
+   o volver al inicio para seleccionar otra.
 
 ## Autor
 
