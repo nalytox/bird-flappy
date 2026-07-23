@@ -30,6 +30,7 @@ BEST_SCORE_FILE = Path(__file__).parent / "best_score.json"
 STATE_START = "start"
 STATE_DIFFICULTY = "difficulty"
 STATE_PLAYING = "playing"
+STATE_PAUSED = "paused"
 STATE_GAME_OVER = "over"
 
 
@@ -190,6 +191,48 @@ def draw_difficulty_selection(surface, fonts, selected_difficulty):
     )
 
 
+def draw_choice_menu(surface, fonts, heading_lines, options, selected_index):
+    tint = pygame.Surface((s.WIDTH, s.HEIGHT), pygame.SRCALPHA)
+    tint.fill((*s.INK, 225))
+    surface.blit(tint, (0, 0))
+
+    y = s.HEIGHT * 0.28
+    for text, font, color in heading_lines:
+        h = draw_text_center(surface, font, text, color, (s.WIDTH / 2, y))
+        y += h + 12
+
+    option_width = 280
+    option_height = 52
+    option_x = (s.WIDTH - option_width) / 2
+    option_y = s.HEIGHT * 0.56
+
+    for index, option_text in enumerate(options):
+        option_rect = pygame.Rect(option_x, option_y, option_width, option_height)
+        is_selected = index == selected_index
+        fill_color = s.AMBER if is_selected else s.CLIFF_BORDER
+        text_color = s.INK if is_selected else s.CREAM
+
+        pygame.draw.rect(surface, fill_color, option_rect, border_radius=10)
+        if is_selected:
+            pygame.draw.rect(surface, s.CREAM, option_rect, 2, border_radius=10)
+        draw_text_center(
+            surface,
+            fonts["button"],
+            option_text,
+            text_color,
+            option_rect.center,
+        )
+        option_y += option_height + 14
+
+    draw_text_center(
+        surface,
+        fonts["body"],
+        "Usa Arriba/Abajo o W/S y confirma con Espacio",
+        s.CREAM,
+        (s.WIDTH / 2, s.HEIGHT * 0.82),
+    )
+
+
 # ---------------------------------------------------------------------
 # Bucle principal
 # ---------------------------------------------------------------------
@@ -218,6 +261,8 @@ def main():
     score = 0
     best = load_best_score()
     move_up = move_down = False
+    pause_option = 0
+    game_over_option = 0
 
     def reset_game():
         nonlocal bird, gate, score
@@ -233,35 +278,59 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_UP, pygame.K_w):
-                    move_up = True
-                if event.key in (pygame.K_DOWN, pygame.K_s):
-                    move_down = True
+                if state == STATE_PLAYING:
+                    if event.key in (pygame.K_UP, pygame.K_w):
+                        move_up = True
+                    elif event.key in (pygame.K_DOWN, pygame.K_s):
+                        move_down = True
+                    elif event.key == pygame.K_ESCAPE:
+                        move_up = move_down = False
+                        pause_option = 0
+                        state = STATE_PAUSED
 
-                if state == STATE_DIFFICULTY and event.key in (pygame.K_UP, pygame.K_w):
-                    current_index = difficulty_keys.index(selected_difficulty)
-                    selected_difficulty = difficulty_keys[(current_index - 1) % len(difficulty_keys)]
-                elif state == STATE_DIFFICULTY and event.key in (pygame.K_DOWN, pygame.K_s):
-                    current_index = difficulty_keys.index(selected_difficulty)
-                    selected_difficulty = difficulty_keys[(current_index + 1) % len(difficulty_keys)]
-
-                if event.key == pygame.K_SPACE and state == STATE_START:
-                    state = STATE_DIFFICULTY
-                elif event.key == pygame.K_SPACE and state == STATE_DIFFICULTY:
-                    reset_game()
-                    state = STATE_PLAYING
-                elif event.key == pygame.K_SPACE and state == STATE_GAME_OVER:
-                    reset_game()
-                    state = STATE_PLAYING
-                if event.key == pygame.K_ESCAPE:
-                    if state == STATE_DIFFICULTY:
-                        state = STATE_START
-                    else:
+                elif state == STATE_START:
+                    if event.key == pygame.K_SPACE:
+                        state = STATE_DIFFICULTY
+                    elif event.key == pygame.K_ESCAPE:
                         running = False
+
+                elif state == STATE_DIFFICULTY:
+                    if event.key in (pygame.K_UP, pygame.K_w):
+                        current_index = difficulty_keys.index(selected_difficulty)
+                        selected_difficulty = difficulty_keys[(current_index - 1) % len(difficulty_keys)]
+                    elif event.key in (pygame.K_DOWN, pygame.K_s):
+                        current_index = difficulty_keys.index(selected_difficulty)
+                        selected_difficulty = difficulty_keys[(current_index + 1) % len(difficulty_keys)]
+                    elif event.key == pygame.K_SPACE:
+                        reset_game()
+                        state = STATE_PLAYING
+                    elif event.key == pygame.K_ESCAPE:
+                        state = STATE_START
+
+                elif state == STATE_PAUSED:
+                    if event.key in (pygame.K_UP, pygame.K_w, pygame.K_DOWN, pygame.K_s):
+                        pause_option = (pause_option + 1) % 2
+                    elif event.key == pygame.K_SPACE:
+                        if pause_option == 0:
+                            state = STATE_PLAYING
+                        else:
+                            state = STATE_START
+                    elif event.key == pygame.K_ESCAPE:
+                        state = STATE_PLAYING
+
+                elif state == STATE_GAME_OVER:
+                    if event.key in (pygame.K_UP, pygame.K_w, pygame.K_DOWN, pygame.K_s):
+                        game_over_option = (game_over_option + 1) % 2
+                    elif event.key == pygame.K_SPACE:
+                        if game_over_option == 0:
+                            reset_game()
+                            state = STATE_PLAYING
+                        else:
+                            state = STATE_START
             elif event.type == pygame.KEYUP:
-                if event.key in (pygame.K_UP, pygame.K_w):
+                if state == STATE_PLAYING and event.key in (pygame.K_UP, pygame.K_w):
                     move_up = False
-                if event.key in (pygame.K_DOWN, pygame.K_s):
+                if state == STATE_PLAYING and event.key in (pygame.K_DOWN, pygame.K_s):
                     move_down = False
 
         if state == STATE_PLAYING:
@@ -278,6 +347,8 @@ def main():
                     or circle_rect_collides(bird.x, bird.y, s.BIRD_RADIUS, gate.bottom_rect)
                 )
                 if hit:
+                    move_up = move_down = False
+                    game_over_option = 0
                     state = STATE_GAME_OVER
                     if score > best:
                         best = score
@@ -321,8 +392,19 @@ def main():
             )
         elif state == STATE_DIFFICULTY:
             draw_difficulty_selection(screen, fonts, selected_difficulty)
+        elif state == STATE_PAUSED:
+            draw_choice_menu(
+                screen,
+                fonts,
+                heading_lines=[
+                    ("PARTIDA EN PAUSA", fonts["eyebrow"], s.BIRD_BELLY),
+                    ("¿Qué quieres hacer?", fonts["title"], s.CREAM),
+                ],
+                options=["Continuar juego", "Volver al inicio"],
+                selected_index=pause_option,
+            )
         elif state == STATE_GAME_OVER:
-            draw_overlay(
+            draw_choice_menu(
                 screen,
                 fonts,
                 heading_lines=[
@@ -330,8 +412,8 @@ def main():
                     ("Barranquín no encajó", fonts["title"], s.CREAM),
                     (f"Puntaje final: {score}", fonts["body"], s.AMBER),
                 ],
-                body_text="",
-                button_text="Reintentar (Espacio)",
+                options=["Reintentar", "Volver al inicio"],
+                selected_index=game_over_option,
             )
 
         pygame.display.flip()
